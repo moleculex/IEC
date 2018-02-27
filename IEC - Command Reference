@@ -1,0 +1,94 @@
+Intelligent E Controller – RN2483 Command Payload (V0.0 2017/02/17 06:03)
+
+1.Preamble
+
+  1.1. The scope of this document refers to the command payload as received by the RN2483
+       on the “radio layer” and transmitted from the RN2483 on the “mac layer”.
+
+  1.2. This document excludes the device specific api.
+
+  1.3. All commands will be delimited by prepending the command with the 6 character
+       preamble 0x3F 0x3F 0x3F.
+
+2. Protocol
+
+  |***Preamble***|******************HEADER******************|*****PAYLOAD******|
+  | Preamble (6) | Type (2) | ERW (2) | ID (2) | Length (2) | Payload (length) |
+
+  2.1. Header (Erase - 0xF0, Read - 0xF2, Write - 0xF1)
+
+    2.1.1. Flash {Length - (Read/Erase = 0x00, Write = 0x12)}
+
+      2.1.1.1. Config (ID = 0xA0)
+
+    2.1.2. Output {Length = 0x02}
+
+      2.1.2.1. Solenoid 1  (ID = 0xA1)
+      2.1.2.2. Buzzer  (ID = 0xA2)
+      2.1.2.3. Solenoid 2  (ID = 0xA5)
+
+    2.1.3. App {Length = 0x00}
+
+      2.1.3.1. Solenoid 1 (ID = 0xA3)
+      2.1.3.2. Status (ID = 0xA4)
+      2.1.3.3. Solenoid 2 (ID = 0xA6)
+
+  2.2. Payload
+
+    2.2.1. Config
+
+      | Empty (2)                  *not empty = 0x3C
+      | Alarm reset interval (4)   *minutes
+      | Alarm status interval (4)  *minutes
+      | Solenoid timeout (4)       *minutes
+      | Reboot interval (4)        *minutes
+      | Alarms in use (2)          *bitmap
+
+    2.2.2. Output (On = 0x01, Off = 0x00)
+
+    2.2.3. Status
+
+      <byte 0:nibble 0 ^>
+      | Mains presence (1 bit - 0:0)                *1 = present 
+      | Solenoid 1 presence (1 bit <0:1>)
+      | Door sensor 1 presence (1 bit <0:2>)
+      | Vibration sensor 1 presence (1 bit <0:3>)
+
+      <byte0:nibble 1 ^>
+      | Solenoid 2 presence (1 bit <0:4>)
+      | Door sensor 2 presence (1 bit <0:5>)
+      | Vibration sensor 2 presence (1 bit <0:6>)
+      | Door sensor 1 (1 bit <0:7>)                 *1 = door closed
+
+      <byte 1 ^>
+      | Vibration sensor 1 (1 bit <1:0>)            *1 = vibration detected
+      | Door sensor 2 (1 bit <1:1>)
+      | Vibration sensor 2 (1 bit <1:2>)
+      | Battery status (5 bit <1:7 - 1:3>)    *0 = charged
+                                              *1 = deep charge
+                                              *2 = charging
+                                              *3 = disconnected
+                                              *4 = N/A
+
+      | Battery voltage (2 byte BCD)
+
+
+
+3. Examples
+
+  3.1. Solenoid 1 - Request (single door, Type = 0x01)
+
+    "3F 3F 3F 01 F1 A3 00"
+
+  3.2. Status - Response (single door, Type = 0x01)
+
+    "3F 3F 3F 01 F2 A4 08 FF 40 13 70"
+    "3F 3F 3F 01 F2 A4 08 FD 40 13 70" *solenoid 1 disconnected
+
+*All references to hexadecimal notation will be interpreted as “ASCII Hex”,
+ therefore count in brackets refers to character count and not byte count unless
+ otherwise stated.
+
+
+*ERW – Erase Read Write
+*BCD - Binary Coded Decimal
